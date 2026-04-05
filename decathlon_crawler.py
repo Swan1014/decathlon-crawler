@@ -199,7 +199,7 @@ def crawl_single_product(url, category):
 def crawl_category(category_url, category_name):
     print(f"\n📂 [{category_name}] 카테고리 탐색을 시작합니다: {category_url}")
     options = webdriver.ChromeOptions()
-    # options.add_argument('--headless')
+    options.add_argument('--headless')
     driver = webdriver.Chrome(service=Service(ChromeDriverManager().install()), options=options)
 
     product_links_set = set() 
