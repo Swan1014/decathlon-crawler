@@ -131,18 +131,22 @@ def crawl_single_product(url, category):
         base_path = f"dataset/products/{category}/{family_id}"
         os.makedirs(base_path, exist_ok=True)
 
-        # --- 상세 설명(model_description) 추출 (네가 준 HTML 구조 반영!) ---
+        # --- 상세 설명(model_description) 추출 ---
         model_description = ""
         if is_first_encounter:
+            # 1. 기존의 짧은 요약본(h3) 먼저 추출해서 바탕으로 깔기
+            desc_div = soup.find('div', class_='css-18x7fir')
+            short_desc = " ".join([h3.get_text() for h3 in desc_div.find_all('h3')]) if desc_div else product_name
+            model_description += short_desc + "\n\n"
+
+            # 2. 기술 정보(상세 설명) 팝업에서 추가로 추출해서 밑에 이어 붙이기
             try:
-                # 1. 기술 정보 버튼 클릭
                 tech_btn = WebDriverWait(driver, 2).until(
                     EC.element_to_be_clickable((By.XPATH, "//h2[contains(text(), '기술 정보')]"))
                 )
                 driver.execute_script("arguments[0].click();", tech_btn)
                 time.sleep(1.5) # 팝업 로딩 대기
                 
-                # 2. 팝업창 HTML 파싱
                 popup_soup = BeautifulSoup(driver.page_source, 'html.parser')
                 popup_div = popup_soup.find('div', attrs={'data-testid': 'additionalinfo-popup'})
                 
@@ -154,11 +158,7 @@ def crawl_single_product(url, category):
             except:
                 pass
             
-            # 팝업에서 못 가져왔으면 기본 요약본으로 대체
-            if not model_description.strip():
-                desc_div = soup.find('div', class_='css-18x7fir')
-                model_description = " ".join([h3.get_text() for h3 in desc_div.find_all('h3')]) if desc_div else product_name
-
+            # 앞뒤 쓸데없는 공백 정리
             model_description = model_description.strip()
 
         # --- 이미지 다운로드 (색상별 폴더) ---
